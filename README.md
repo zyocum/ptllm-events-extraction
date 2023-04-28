@@ -14,7 +14,7 @@ The following recording shows a demonstration:
 
 Make a virtual Python environment:
 
-```zsh
+```sh
 $ python3 -m venv events
 ...
 $ source events/bin/activate
@@ -62,21 +62,20 @@ SYSTEM_ROLES=false
 
 Copy the preconfigured role JSON to your configured `ROLE_STORAGE_PATH` directory:
 
-```zsh
+```sh
 (events) $ cp roles/events_analyzer.json ~/.config/shell_gpt/roles/
 ```
 
 You should see the role now when you run `sgpt --list-roles`:
 
-```zsh
+```sh
 (events) $ sgpt --list-roles
 ~/.config/shell_gpt/roles/default.json
 ~/.config/shell_gpt/roles/shell.json
 ~/.config/shell_gpt/roles/code.json
 ...
 ~/.config/shell_gpt/roles/events_analyzer.json
-(events)
-$ sgpt --show-role events_analyzer
+(events) $ sgpt --show-role events_analyzer
 I want you to perform an information extraction task involving natural language processing.  I will provide you text, and I want to extract the events that are mentioned in the text, as well as the participating entities within each event instance.
 
 The input will be structured with one component being natural language text, with the goal being that entity mentions and event mentions will be annotated with identifiers that are unique within the text.  The input will also include a list of event frames that are of interest to be analyzed.
@@ -93,14 +92,14 @@ An example of the input format is as follows:
     }
   ]
 }
-```
+‍```
 
 Only emit JSON as output without any other textual descriptions.
 ```
 
 You can also inspect the expected output format that has been configured for this role with:
 
-```zsh
+```sh
 (events) $ jq .expecting ~/.config/shell_gpt/roles/events_analyzer.json | jq -r .
 {
   "annotations": "Two news [reporters|T1] were [fired|E1] on [Monday|T2].  [Don Lemon|T3] was [fired|E2] by [CNN|T4] after 17 [years|T5].  [Fox News|T6] also [ousted|E3] [Tucker Carlson|T7] [who|T8] had been with the [network|T9] since [2009|T10].",
@@ -204,7 +203,7 @@ To analyze some text with specific event frames, we formulate our input like so:
 
 Let's look at some example input JSONs:
 
-```zsh
+```sh
 (events) $ jq . datasets/data.jsonl 
 {
   "text": "Two news reporters were fired on Monday.  Don Lemon was fired by CNN after 17 years.  Fox News also ousted Tucker Carlson who had been with the network since 2009.",
@@ -243,7 +242,7 @@ Note that the event frame descriptions are styled similarly to the [FrameNet pro
 
 Let's extract the second input and analyze it using the configured `events_analyzer` role:
 
-```zsh
+```sh
 (events) $ data="$(tail -n +2 datasets/data.jsonl | head -1)"
 (events) $ jq . <<< "$data"
 {
@@ -268,7 +267,7 @@ Let's extract the second input and analyze it using the configured `events_analy
 
 Note that `sgpt` will cache your results by default, so you can quickly get the analysis for the same input by re-running the command.  If you want to save the analysis, redirect it like so:
 
-```zsh
+```sh
 (events) $ sgpt --role events_analyzer <<< "$data" | jq -c . > firing_1-annotation.jsonl
 (events) $ jq . firing_1-annotation.jsonl 
 {
@@ -340,7 +339,7 @@ To analyze multiple inputs, iteratively, you can use the provided `analyze.zsh` 
 
 The script will read JSON lines from a file, analyze each one, and write JSON lines with the analyses to `/dev/stdout`.
 
-```
+```sh
 # analyze each input in `data.jsonl` with the gpt-4 model
 (events) $ ./analyze.zsh datasets/data.jsonl gpt-4 > annotations.jsonl
 ... # it may take a while to run analysis on all the inputs
