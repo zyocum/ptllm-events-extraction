@@ -210,7 +210,7 @@ Let's look at some example input JSONs:
   "frames": [
     {
       "type": "Firing_1",
-      "description": "An [employer] ends an employment relationship with an [employee] from a [position].  There may also be a [reason] that motivates the firing and the firing may occur on some specified [date]."
+      "description": "An [employer] ends an employment relationship with an [employee] employed in a [position].  There may also be a [reason] that motivates the firing and the firing may occur on some specified [date]."
     }
   ]
 }
@@ -219,7 +219,7 @@ Let's look at some example input JSONs:
   "frames": [
     {
       "type": "Firing_1",
-      "description": "An [employer] ends an employment relationship with an [employee] from a [position].  There may also be a [reason] that motivates the firing and the firing may occur on some specified [date]."
+      "description": "An [employer] ends an employment relationship with an [employee] employed in a [position].  There may also be a [reason] that motivates the firing and the firing may occur on some specified [date]."
     }
   ]
 }
@@ -228,11 +228,20 @@ Let's look at some example input JSONs:
   "frames": [
     {
       "type": "Purchase_1",
-      "description": "An [buyer] exchanges [money] with a [seller] in return for [goods].  The purchase may occur on a specified [date] or [place]."
+      "description": "A [buyer] exchanges [money] with a [seller] in return for [goods].  The purchase may occur on a specified [date] or [place]."
     },
     {
       "type": "Meeting_1",
-      "description": "More than one [participant] attends an event planned on a particulare [date].  There may particular [topic]s discussed.  The meeting may occur at a specified [place]."
+      "description": "More than one [participant] attends an event planned on a particular [date] organized by an [organizer].  There may be particular [topic]s discussed.  The meeting may occur at a specified [place]."
+    }
+  ]
+}
+{
+  "text": "Jack and Jill have plans to take a vacation in Shelbyville in two weeks.  Jill's dog Spot is going to join them on their trip.  They will be leaving from Springfield.",
+  "frames": [
+    {
+      "type": "Traveling_1",
+      "description": "One or more [traveler]s are translocated from an [origin] to a [destination] possibly along some [path].  The traveling may occur on a specified [date]."
     }
   ]
 }
@@ -250,18 +259,21 @@ Let's extract the second input and analyze it using the configured `events_analy
   "frames": [
     {
       "type": "Firing_1",
-      "description": "An [employer] ends an employment relationship with an [employee] from a [position].  There may also be a [reason] that motivates the firing and the firing may occur on some specified [date]."
+      "description": "An [employer] ends an employment relationship with an [employee] employed in a [position].  There may also be a [reason] that motivates the firing and the firing may occur on some specified [date]."
     }
   ]
 }
 (events) $ sgpt --role events_analyzer <<< "$data"
 {
-  "annotations": "A group of [workers|T1] were [fired|E1] from [Acme Fund|T2] at the end of the day on [Friday|T3].  The group included [Alice|T4], [Bob|T5], and [Cindy|T6], who were each terminated for violating [insider trading laws|T7].  [Dylan|T8] was not [ousted|E2], for now.",
+  "annotations": "A group of [workers|T1] were [fired|E1] from [Acme Fund|T2] at the end of the day on [Friday|T3].  The group included [Alice|T4], [Bob|T5], and [Cindy|T6], who were each terminated for [violating insider trading laws|T7].  [Dylan|T8] was not [ousted|E2], for now.",
   "events": [
     {
       "type": "Firing_1",
       "trigger": {
         "id": "E1",
+        "text": "fired"
+      },
+      "roles": [
 ... # this may take some time as Open AI's API streams the predicted tokens to your shell (it should be colored magenta if you are writing to `/dev/stdout`)
 ```
 
@@ -271,7 +283,7 @@ Note that `sgpt` will cache your results by default, so you can quickly get the 
 (events) $ sgpt --role events_analyzer <<< "$data" | jq -c . > firing_1-annotation.jsonl
 (events) $ jq . firing_1-annotation.jsonl 
 {
-  "annotations": "A group of [workers|T1] were [fired|E1] from [Acme Fund|T2] at the end of the day on [Friday|T3].  The group included [Alice|T4], [Bob|T5], and [Cindy|T6], who were each terminated for violating [insider trading laws|T7].  [Dylan|T8] was not [ousted|E2], for now.",
+  "annotations": "A group of [workers|T1] were [fired|E1] from [Acme Fund|T2] at the end of the day on [Friday|T3].  The group included [Alice|T4], [Bob|T5], and [Cindy|T6], who were each terminated for [violating insider trading laws|T7].  [Dylan|T8] was not [ousted|E2], for now.",
   "events": [
     {
       "type": "Firing_1",
@@ -301,7 +313,7 @@ Note that `sgpt` will cache your results by default, so you can quickly get the 
           },
           "reason": {
             "id": "T7",
-            "text": "insider trading laws"
+            "text": "violating insider trading laws"
           }
         },
         {
@@ -311,7 +323,7 @@ Note that `sgpt` will cache your results by default, so you can quickly get the 
           },
           "reason": {
             "id": "T7",
-            "text": "insider trading laws"
+            "text": "violating insider trading laws"
           }
         },
         {
@@ -321,7 +333,7 @@ Note that `sgpt` will cache your results by default, so you can quickly get the 
           },
           "reason": {
             "id": "T7",
-            "text": "insider trading laws"
+            "text": "violating insider trading laws"
           }
         }
       ]
@@ -345,7 +357,29 @@ The script will read JSON lines from a file, analyze each one, and write JSON li
 ... # it may take a while to run analysis on all the inputs
 (events) $ jq . annotations.jsonl
 ...
-   {
+{
+  "annotations": "[Jack and Jill|T1] have plans to [take a vacation|E1] in [Shelbyville|T2] in two weeks.  [Jill's dog Spot|T3] is going to join them on their trip.  They will be [leaving|E2] from [Springfield|T4].",
+  "events": [
+    {
+      "type": "Traveling_1",
+      "trigger": {
+        "id": "E1",
+        "text": "take a vacation"
+      },
+      "roles": [
+        {
+          "traveler": {
+            "id": "T1",
+            "text": "Jack and Jill"
+          },
+          "destination": {
+            "id": "T2",
+            "text": "Shelbyville"
+          }
+        }
+      ]
+    },
+    {
       "type": "Traveling_1",
       "trigger": {
         "id": "E2",
@@ -355,18 +389,10 @@ The script will read JSON lines from a file, analyze each one, and write JSON li
         {
           "traveler": {
             "id": "T1",
-            "text": "Jack"
-          }
-        },
-        {
-          "traveler": {
-            "id": "T2",
-            "text": "Jill"
-          }
-        },
-        {
+            "text": "Jack and Jill"
+          },
           "origin": {
-            "id": "T5",
+            "id": "T4",
             "text": "Springfield"
           }
         }
